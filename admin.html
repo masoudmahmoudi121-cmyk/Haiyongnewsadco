@@ -265,23 +265,40 @@ async function loadWarranties() {
       return;
     }
 
-    for (const warranty of rows) {
-      const item = document.createElement('div');
-      item.style.cssText =
-        'padding:12px 0;border-bottom:1px solid #ddd;line-height:1.9;overflow-wrap:anywhere';
+    
+for (const warranty of rows) {
+  const item = document.createElement('div');
+  item.style.cssText =
+    'padding:12px 0;border-bottom:1px solid #ddd;line-height:1.9;overflow-wrap:anywhere';
 
-      const title = document.createElement('strong');
-      title.textContent = warranty.serial_number;
-      item.appendChild(title);
+  const title = document.createElement('strong');
+  title.textContent = warranty.serial_number;
+  item.appendChild(title);
 
-      const details = document.createElement('div');
-      details.textContent =
-        'مدل: ' + warranty.model +
-        ' | تاریخ نصب: ' + warranty.installation_date +
-        ' | گارانتی: ' + warranty.warranty_months + ' ماه';
+  const details = document.createElement('div');
+  details.textContent =
+    'مدل: ' + warranty.model +
+    ' | تاریخ نصب: ' + warranty.installation_date +
+    ' | گارانتی: ' + warranty.warranty_months + ' ماه';
+  item.appendChild(details);
 
-      item.appendChild(details);
-      $('list').appendChild(item);
+  const editButton = document.createElement('button');
+  editButton.type = 'button';
+  editButton.textContent = 'ویرایش';
+  editButton.onclick = () => editWarranty(warranty);
+  item.appendChild(editButton);
+
+  const deleteButton = document.createElement('button');
+  deleteButton.type = 'button';
+  deleteButton.textContent = 'حذف';
+  deleteButton.style.background = '#b42318';
+  deleteButton.style.color = '#ffffff';
+  deleteButton.onclick = () => deleteWarranty(warranty);
+  item.appendChild(deleteButton);
+
+  $('list').appendChild(item);
+}
+
     }
 
     say('فهرست دستگاه‌ها به‌روزرسانی شد.');
