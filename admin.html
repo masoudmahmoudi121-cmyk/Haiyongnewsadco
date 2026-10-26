@@ -312,6 +312,79 @@ for (const warranty of rows) {
   }
 }
 
+async function editWarranty(warranty) {
+  const serial = prompt('شماره سریال:', warranty.serial_number);
+  if (serial === null) return;
+
+  const model = prompt('مدل دستگاه:', warranty.model);
+  if (model === null) return;
+
+  const customer = prompt('نام مشتری:', warranty.customer_name || '');
+  if (customer === null) return;
+
+  const installationDate = prompt(
+    'تاریخ نصب (میلادی، YYYY-MM-DD):',
+    warranty.installation_date
+  );
+  if (installationDate === null) return;
+
+  const monthsText = prompt('مدت گارانتی به ماه:', warranty.warranty_months);
+  if (monthsText === null) return;
+
+  const months = Number(monthsText);
+
+  if (
+    !serial.trim() ||
+    !model.trim() ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(installationDate) ||
+    !Number.isInteger(months) ||
+    months < 1
+  ) {
+    say('اطلاعات واردشده معتبر نیست. تاریخ باید به شکل YYYY-MM-DD باشد.');
+    return;
+  }
+
+  try {
+    await api('warranties?id=eq.' + encodeURIComponent(warranty.id), {
+      method: 'PATCH',
+      body: JSON.stringify({
+        serial_number: serial.trim(),
+        model: model.trim(),
+        customer_name: customer.trim() || null,
+        installation_date: installationDate,
+        warranty_months: months
+      })
+    });
+
+    say('اطلاعات دستگاه به‌روزرسانی شد.');
+    await loadWarranties();
+  } catch (error) {
+    console.error('Edit warranty error:', error);
+    say('ویرایش انجام نشد: ' + (error.message || String(error)));
+  }
+}
+
+async function deleteWarranty(warranty) {
+  const confirmed = confirm(
+    'آیا مطمئن هستید که می‌خواهید دستگاه با سریال ' +
+    warranty.serial_number + ' را حذف کنید؟ این کار قابل بازگشت نیست.'
+  );
+
+  if (!confirmed) return;
+
+  try {
+    await api('warranties?id=eq.' + encodeURIComponent(warranty.id), {
+      method: 'DELETE'
+    });
+
+    say('دستگاه حذف شد.');
+    await loadWarranties();
+  } catch (error) {
+    console.error('Delete warranty error:', error);
+    say('حذف انجام نشد: ' + (error.message || String(error)));
+  }
+}
+
 async function logout() {
   const token = accessToken;
 
