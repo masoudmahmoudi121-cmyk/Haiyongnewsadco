@@ -71,8 +71,7 @@ async function login(){
     say('ایمیل و رمز عبور را وارد کنید.');
     return;
   }
-  if(SUPABASE_KEY === 'YOUR_SUPABASE_PUBLISHABLE_KEY'){
-    say('ابتدا کلید Publishable را در کد وارد کنید.');
+  if(SUPABASE_KEY === 'YOUR_SUPABASE_PUBLISHABLE_KEY')
     return;
   }
   $('loginBtn').disabled = true;
