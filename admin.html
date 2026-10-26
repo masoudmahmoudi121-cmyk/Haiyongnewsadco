@@ -309,3 +309,5 @@ async function logout() {
   if (!token) return;
 
   try {
+    await fetch(SUPABASE_URL + '/auth/v1/logout', {
+      method: 'POST',
