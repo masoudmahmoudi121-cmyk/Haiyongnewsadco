@@ -1,0 +1,205 @@
+
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>پنل مدیریت گارانتی | هایونگ نیوساد</title>
+<style>
+body{font-family:Tahoma,Arial,sans-serif;background:#f3f5f8;color:#17243d;margin:0}
+header{background:#10223d;color:white;text-align:center;padding:24px}
+main{max-width:650px;margin:25px auto;padding:16px}
+.card{background:white;border-radius:12px;padding:22px;margin-bottom:18px;box-shadow:0 3px 14px #0001}
+input,button{box-sizing:border-box;width:100%;padding:12px;margin:7px 0;border-radius:7px;font-size:16px}
+input{border:1px solid #ccd3dd}
+button{border:0;background:#c8a54b;color:#10223d;font-weight:bold;cursor:pointer}
+button:disabled{opacity:.5}
+h2{font-size:20px}
+#message{line-height:1.9;overflow-wrap:anywhere}
+.small{font-size:12px;color:#687386;line-height:1.8}
+</style>
+</head>
+<body>
+<header>
+<h1>هایونگ نیوساد</h1>
+<div>پنل مدیریت گارانتی</div>
+<div>HAYOUNG NEWSAD</div>
+</header>
+<main>
+<section class="card" id="loginCard">
+<h2>ورود مدیر</h2>
+<input id="email" type="email" autocomplete="username" placeholder="ایمیل مدیر">
+<input id="password" type="password" autocomplete="current-password" placeholder="رمز عبور">
+<button id="loginBtn" onclick="login()">ورود</button>
+</section>
+
+<section class="card" id="adminCard" hidden>
+<h2>ثبت دستگاه جدید</h2>
+<p id="signedIn"></p>
+<input id="serial" placeholder="شماره سریال دستگاه">
+<input id="model" placeholder="مدل دستگاه">
+<input id="customer" placeholder="نام مشتری (اختیاری)">
+<label for="install">تاریخ نصب (میلادی)</label>
+<input id="install" type="date">
+<label for="months">مدت گارانتی (ماه)</label>
+<input id="months" type="number" min="1" value="12">
+<button id="saveBtn" onclick="addWarranty()">ثبت دستگاه</button>
+<button onclick="loadWarranties()">به‌روزرسانی فهرست</button>
+<button onclick="logout()">خروج از حساب</button>
+<h2>دستگاه‌های ثبت‌شده</h2>
+<div id="list"></div>
+</section>
+
+<div id="message" role="status" aria-live="polite"></div>
+<p class="small">دسترسی مدیریتی فقط برای حساب‌های مجاز پایگاه داده امکان‌پذیر است. رمز عبور را در اختیار دیگران قرار ندهید.</p>
+</main>
+
+<script>
+const SUPABASE_URL = 'https://vcvefrvkfqhvvwkbxelv.supabase.co';
+const SUPABASE_KEY = '‏sb_publishable_cIdE8M4uyenSYRphzmIvqg_ZjRcboQs
+';
+
+let accessToken = '';
+let currentEmail = '';
+
+const $ = id => document.getElementById(id);
+const say = text => $('message').textContent = text;
+
+async function login(){
+  const email = $('email').value.trim();
+  const password = $('password').value;
+  if(!email || !password){
+    say('ایمیل و رمز عبور را وارد کنید.');
+    return;
+  }
+  if(SUPABASE_KEY === 'YOUR_SUPABASE_PUBLISHABLE_KEY‏'){
+    say('ابتدا کلید Publishable را در کد وارد کنید.');
+    return;
+  }
+  $('loginBtn').disabled = true;
+  say('در حال بررسی اطلاعات ورود...');
+  try{
+    const r = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password',{
+      method:'POST',
+      headers:{
+        'apikey':SUPABASE_KEY,
+        'Content-Type':'application/json'
+      },
+      body:JSON.stringify({email,password})
+    });
+    const data = await r.json();
+    if(!r.ok) throw new Error(data.msg || data.message || data.error_description || 'ورود ناموفق بود.');
+    accessToken = data.access_token;
+    currentEmail = data.user.email;
+    $('loginCard').hidden = true;
+    $('adminCard').hidden = false;
+    $('signedIn').textContent = 'حساب واردشده: ' + currentEmail;
+    $('password').value = '';
+    say('ورود انجام شد. در حال دریافت فهرست دستگاه‌ها...');
+    await loadWarranties();
+  }catch(e){
+    say('ورود انجام نشد: ' + e.message);
+  }finally{
+    $('loginBtn').disabled = false;
+  }
+}
+
+async function api(path, options={}){
+  const r = await fetch(SUPABASE_URL + '/rest/v1/' + path,{
+    ...options,
+    headers:{
+      'apikey':SUPABASE_KEY,
+      'Authorization':'Bearer ' + accessToken,
+      'Content-Type':'application/json',
+      'Prefer':'return=representation',
+      ...(options.headers || {})
+    }
+  });
+  const text = await r.text();
+  let data;
+  try{data = text ? JSON.parse(text) : null;}catch{data = text;}
+  if(!r.ok) throw new Error(data?.message || data?.hint || data?.details || text || 'خطای پایگاه داده');
+  return data;
+}
+
+async function addWarranty(){
+  const serial = $('serial').value.trim();
+  const model = $('model').value.trim();
+  const install = $('install').value;
+  const months = Number($('months').value);
+  if(!serial || !model || !install || !Number.isInteger(months) || months < 1){
+    say('شماره سریال، مدل، تاریخ نصب و مدت معتبر گارانتی را وارد کنید.');
+    return;
+  }
+  $('saveBtn').disabled = true;
+  try{
+    await api('warranties',{
+      method:'POST',
+      body:JSON.stringify({
+        serial_number:serial,
+        model:model,
+        customer_name:$('customer').value.trim() || null,
+        installation_date:install,
+        warranty_months:months
+      })
+    });
+    $('serial').value = '';
+    $('model').value = '';
+    $('customer').value = '';
+    $('install').value = '';
+    $('months').value = '12';
+    say('دستگاه با موفقیت ثبت شد.');
+    await loadWarranties();
+  }catch(e){
+    say('ثبت انجام نشد: ' + e.message);
+  }finally{
+    $('saveBtn').disabled = false;
+  }
+}
+
+async function loadWarranties(){
+  $('list').textContent = 'در حال بارگذاری...';
+  try{
+    const rows = await api('warranties?select=serial_number,model,installation_date,warranty_months&order=created_at.desc');
+    $('list').replaceChildren();
+    if(!rows.length){
+      $('list').textContent = 'هنوز دستگاهی ثبت نشده است.';
+      return;
+    }
+    for(const w of rows){
+      const item = document.createElement('div');
+      item.style.cssText = 'padding:12px 0;border-bottom:1px solid #ddd;line-height:1.9;overflow-wrap:anywhere';
+      const title = document.createElement('strong');
+      title.textContent = w.serial_number;
+      item.appendChild(title);
+      const details = document.createElement('div');
+      details.textContent = 'مدل: ' + w.model + ' | تاریخ نصب: ' + w.installation_date + ' | گارانتی: ' + w.warranty_months + ' ماه';
+      item.appendChild(details);
+      $('list').appendChild(item);
+    }
+  }catch(e){
+    $('list').textContent = 'دریافت فهرست ناموفق بود.';
+    say('خطای دریافت فهرست: ' + e.message);
+  }
+}
+
+async function logout(){
+  try{
+    await fetch(SUPABASE_URL + '/auth/v1/logout',{
+      method:'POST',
+      headers:{
+        'apikey':SUPABASE_KEY,
+        'Authorization':'Bearer ' + accessToken
+      }
+    });
+  }catch(e){}
+  accessToken = '';
+  currentEmail = '';
+  $('adminCard').hidden = true;
+  $('loginCard').hidden = false;
+  $('list').replaceChildren();
+  say('از حساب خارج شدید.');
+}
+</script>
+</body>
+</html>
