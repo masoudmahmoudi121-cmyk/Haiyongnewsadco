@@ -3,107 +3,118 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>گارانتی هایونگ نیوساد</title>
 <style>
-body {
-  margin: 0;
-  font-family: Arial, Tahoma, sans-serif;
-  background: #f3f5f8;
-  color: #17243a;
-}
-header {
-  background: #10223d;
-  color: white;
-  text-align: center;
-  padding: 28px 15px;
-  border-bottom: 5px solid #c8a54b;
-}
-h1 { margin: 0 0 10px; font-size: 26px; }
-main {
-  max-width: 600px;
-  margin: 28px auto;
-  padding: 22px;
-}
-.card {
-  background: white;
-  padding: 24px;
-  border-radius: 14px;
-  box-shadow: 0 3px 14px #00000012;
-}
-label { display: block; margin: 18px 0 8px; }
-input {
-  box-sizing: border-box;
-  width: 100%;
-  padding: 13px;
-  border: 1px solid #cbd2dc;
-  border-radius: 8px;
-  font-size: 16px;
-}
-button {
-  width: 100%;
-  margin-top: 15px;
-  padding: 13px;
-  background: #c8a54b;
-  color: #10223d;
-  border: 0;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: bold;
-}
-.note { color: #697386; font-size: 13px; line-height: 1.8; }
-#result { margin-top: 18px; line-height: 1.9; }
-footer { text-align: center; padding: 20px; color: #697386; font-size: 12px; }
-.en { direction: ltr; }
+body{margin:0;font-family:Arial,Tahoma,sans-serif;background:#f3f5f8;color:#17243d}
+header{background:#10223d;color:white;text-align:center;padding:28px 15px;border-bottom:5px solid #c8a54b}
+h1{margin:0 0 10px;font-size:27px}
+main{max-width:600px;margin:28px auto;padding:18px}
+.card{background:white;padding:24px;border-radius:14px;box-shadow:0 3px 14px #0001}
+button{cursor:pointer;border:0;border-radius:8px;padding:12px;background:#c8a54b;color:#10223d;font-size:16px;font-weight:bold}
+.langs{display:flex;gap:10px}
+.langs button{flex:1}
+label{display:block;margin:20px 0 8px}
+input{box-sizing:border-box;width:100%;padding:13px;border:1px solid #cbd2dc;border-radius:8px;font-size:16px}
+#check{width:100%;margin-top:14px}
+#result{margin-top:20px;line-height:2;overflow-wrap:anywhere}
+.note{font-size:12px;color:#687386;line-height:1.8}
+footer{text-align:center;color:#687386;font-size:12px;padding:20px}
 </style>
 </head>
 <body>
 <header>
-  <h1>هایونگ نیوساد</h1>
-  <div>سامانه بررسی گارانتی دستگاه‌های تزریق پلاستیک</div>
-  <p>HAYOUNG NEWSAD</p>
+<h1>هایونگ نیوساد</h1>
+<div id="subtitle">سامانه بررسی گارانتی دستگاه‌های تزریق پلاستیک</div>
+<p>HAYOUNG NEWSAD</p>
 </header>
-<main>
-  <div class="card">
-    <button onclick="setLang('fa')">فارسی</button>
-    <button onclick="setLang('en')">English</button>
-    <h2 id="heading">بررسی وضعیت گارانتی</h2>
-    <label id="label" for="serial">شماره سریال دستگاه</label>
-    <input id="serial" placeholder="شماره سریال را وارد کنید">
-    <button id="check" onclick="checkWarranty()">بررسی گارانتی</button>
-    <div id="result"></div>
-    <p class="note" id="note">توجه: این نسخه آزمایشی است و هنوز به بانک اطلاعات واقعی دستگاه‌ها متصل نشده است.</p>
-  </div>
-</main>
+<main><div class="card">
+<div class="langs">
+<button onclick="setLang('fa')">فارسی</button>
+<button onclick="setLang('en')">English</button>
+</div>
+<h2 id="heading">بررسی وضعیت گارانتی</h2>
+<label id="label" for="serial">شماره سریال دستگاه</label>
+<input id="serial" autocomplete="off" placeholder="شماره سریال را وارد کنید">
+<button id="check" onclick="checkWarranty()">بررسی گارانتی</button>
+<div id="result" role="status" aria-live="polite"></div>
+<p class="note" id="note">برای نمایش نتیجه، شماره سریال دستگاه را وارد کنید.</p>
+</div></main>
 <footer>HAYOUNG NEWSAD · Warranty Verification</footer>
 <script>
+const SUPABASE_URL = 'https://vcvefrvkfqhvvwkbxelv.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_cIdE8M4uyenSYRphzmIvqg_ZjRcboQs';
 let lang = 'fa';
-function setLang(language) {
-  lang = language;
-  document.documentElement.lang = language;
-  document.documentElement.dir = language === 'fa' ? 'rtl' : 'ltr';
-  document.getElementById('heading').textContent =
-    language === 'fa' ? 'بررسی وضعیت گارانتی' : 'Warranty Verification';
-  document.getElementById('label').textContent =
-    language === 'fa' ? 'شماره سریال دستگاه' : 'Machine Serial Number';
-  document.getElementById('serial').placeholder =
-    language === 'fa' ? 'شماره سریال را وارد کنید' : 'Enter serial number';
-  document.getElementById('check').textContent =
-    language === 'fa' ? 'بررسی گارانتی' : 'Check Warranty';
-  document.getElementById('note').textContent =
-    language === 'fa'
-    ? 'توجه: این نسخه آزمایشی است و هنوز به بانک اطلاعات واقعی دستگاه‌ها متصل نشده است.'
-    : 'Demo version: not yet connected to a real warranty database.';
-  document.getElementById('result').textContent = '';
+
+function setLang(language){
+  lang=language;
+  document.documentElement.lang=language;
+  document.documentElement.dir=language==='fa'?'rtl':'ltr';
+  document.getElementById('heading').textContent=language==='fa'?'بررسی وضعیت گارانتی':'Warranty Verification';
+  document.getElementById('label').textContent=language==='fa'?'شماره سریال دستگاه':'Machine Serial Number';
+  document.getElementById('serial').placeholder=language==='fa'?'شماره سریال را وارد کنید':'Enter machine serial number';
+  document.getElementById('check').textContent=language==='fa'?'بررسی گارانتی':'Check Warranty';
+  document.getElementById('subtitle').textContent=language==='fa'?'سامانه بررسی گارانتی دستگاه‌های تزریق پلاستیک':'Plastic Injection Molding Machine Warranty Verification';
+  document.getElementById('note').textContent=language==='fa'?'برای نمایش نتیجه، شماره سریال دستگاه را وارد کنید.':'Enter a machine serial number to check its warranty.';
+  document.getElementById('result').textContent='';
 }
-function checkWarranty() {
-  const serial = document.getElementById('serial').value.trim();
-  document.getElementById('result').textContent = serial
-    ? (lang === 'fa'
-       ? 'این نسخه آزمایشی هنوز امکان تأیید سریال را ندارد. سامانه باید به بانک اطلاعات گارانتی متصل شود.'
-       : 'This demo cannot verify serial numbers yet. A warranty database connection is required.')
-    : (lang === 'fa' ? 'لطفاً شماره سریال را وارد کنید.' : 'Please enter a serial number.');
+
+async function checkWarranty(){
+  const serial=document.getElementById('serial').value.trim();
+  const result=document.getElementById('result');
+  const btn=document.getElementById('check');
+  if(!serial){
+    result.textContent=lang==='fa'?'لطفاً شماره سریال را وارد کنید.':'Please enter a serial number.';
+    return;
+  }
+  if(SUPABASE_KEY==='YOUR_SUPABASE_PUBLISHABLE_KEY'){
+    result.textContent=lang==='fa'?'اتصال هنوز کامل نشده است؛ کلید عمومی Supabase باید در کد قرار گیرد.':'Setup incomplete: add your Supabase publishable key to the page code.';
+    return;
+  }
+  btn.disabled=true;
+  result.textContent=lang==='fa'?'در حال بررسی...':'Checking...';
+  try{
+    const response=await fetch(SUPABASE_URL+'/rest/v1/rpc/verify_warranty',{
+      method:'POST',
+      headers:{
+        'apikey':SUPABASE_KEY,
+        'Authorization':'Bearer '+SUPABASE_KEY,
+        'Content-Type':'application/json'
+      },
+      body:JSON.stringify({p_serial:serial})
+    });
+    if(!response.ok) throw new Error('Request failed');
+    const rows=await response.json();
+    if(!rows.length){
+      result.textContent=lang==='fa'?'شماره سریال در سامانه پیدا نشد. لطفاً شماره را بررسی کنید.':'Serial number not found. Please check the number.';
+      return;
+    }
+    const w=rows[0];
+    const active=w.is_active;
+    result.innerHTML='';
+    const lines=[
+      [lang==='fa'?'شماره سریال':'Serial Number',w.serial_number],
+      [lang==='fa'?'مدل دستگاه':'Machine Model',w.model],
+      [lang==='fa'?'تاریخ نصب':'Installation Date',w.installation_date],
+      [lang==='fa'?'پایان گارانتی':'Warranty Expiry',w.warranty_expiry],
+      [lang==='fa'?'وضعیت':'Status',active?(lang==='fa'?'معتبر':'Active'):(lang==='fa'?'منقضی شده':'Expired')],
+      [lang==='fa'?'روزهای باقی‌مانده':'Days Remaining',w.days_remaining]
+    ];
+    for(const [label,value] of lines){
+      const div=document.createElement('div');
+      const strong=document.createElement('strong');
+      strong.textContent=label+': ';
+      div.appendChild(strong);
+      div.appendChild(document.createTextNode(String(value)));
+      result.appendChild(div);
+    }
+  }catch(e){
+    result.textContent=lang==='fa'?'بررسی انجام نشد. تنظیمات اتصال و تابع پایگاه داده باید بررسی شود.':'Could not verify. Please check the connection and database function.';
+  }finally{
+    btn.disabled=false;
+  }
 }
+document.getElementById('serial').addEventListener('keydown',e=>{if(e.key==='Enter')checkWarranty()});
 </script>
 </body>
 </html>
