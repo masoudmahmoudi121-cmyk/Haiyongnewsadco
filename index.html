@@ -1,1 +1,109 @@
 
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>گارانتی هایونگ نیوساد</title>
+<style>
+body {
+  margin: 0;
+  font-family: Arial, Tahoma, sans-serif;
+  background: #f3f5f8;
+  color: #17243a;
+}
+header {
+  background: #10223d;
+  color: white;
+  text-align: center;
+  padding: 28px 15px;
+  border-bottom: 5px solid #c8a54b;
+}
+h1 { margin: 0 0 10px; font-size: 26px; }
+main {
+  max-width: 600px;
+  margin: 28px auto;
+  padding: 22px;
+}
+.card {
+  background: white;
+  padding: 24px;
+  border-radius: 14px;
+  box-shadow: 0 3px 14px #00000012;
+}
+label { display: block; margin: 18px 0 8px; }
+input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #cbd2dc;
+  border-radius: 8px;
+  font-size: 16px;
+}
+button {
+  width: 100%;
+  margin-top: 15px;
+  padding: 13px;
+  background: #c8a54b;
+  color: #10223d;
+  border: 0;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+}
+.note { color: #697386; font-size: 13px; line-height: 1.8; }
+#result { margin-top: 18px; line-height: 1.9; }
+footer { text-align: center; padding: 20px; color: #697386; font-size: 12px; }
+.en { direction: ltr; }
+</style>
+</head>
+<body>
+<header>
+  <h1>هایونگ نیوساد</h1>
+  <div>سامانه بررسی گارانتی دستگاه‌های تزریق پلاستیک</div>
+  <p>HAYOUNG NEWSAD</p>
+</header>
+<main>
+  <div class="card">
+    <button onclick="setLang('fa')">فارسی</button>
+    <button onclick="setLang('en')">English</button>
+    <h2 id="heading">بررسی وضعیت گارانتی</h2>
+    <label id="label" for="serial">شماره سریال دستگاه</label>
+    <input id="serial" placeholder="شماره سریال را وارد کنید">
+    <button id="check" onclick="checkWarranty()">بررسی گارانتی</button>
+    <div id="result"></div>
+    <p class="note" id="note">توجه: این نسخه آزمایشی است و هنوز به بانک اطلاعات واقعی دستگاه‌ها متصل نشده است.</p>
+  </div>
+</main>
+<footer>HAYOUNG NEWSAD · Warranty Verification</footer>
+<script>
+let lang = 'fa';
+function setLang(language) {
+  lang = language;
+  document.documentElement.lang = language;
+  document.documentElement.dir = language === 'fa' ? 'rtl' : 'ltr';
+  document.getElementById('heading').textContent =
+    language === 'fa' ? 'بررسی وضعیت گارانتی' : 'Warranty Verification';
+  document.getElementById('label').textContent =
+    language === 'fa' ? 'شماره سریال دستگاه' : 'Machine Serial Number';
+  document.getElementById('serial').placeholder =
+    language === 'fa' ? 'شماره سریال را وارد کنید' : 'Enter serial number';
+  document.getElementById('check').textContent =
+    language === 'fa' ? 'بررسی گارانتی' : 'Check Warranty';
+  document.getElementById('note').textContent =
+    language === 'fa'
+    ? 'توجه: این نسخه آزمایشی است و هنوز به بانک اطلاعات واقعی دستگاه‌ها متصل نشده است.'
+    : 'Demo version: not yet connected to a real warranty database.';
+  document.getElementById('result').textContent = '';
+}
+function checkWarranty() {
+  const serial = document.getElementById('serial').value.trim();
+  document.getElementById('result').textContent = serial
+    ? (lang === 'fa'
+       ? 'این نسخه آزمایشی هنوز امکان تأیید سریال را ندارد. سامانه باید به بانک اطلاعات گارانتی متصل شود.'
+       : 'This demo cannot verify serial numbers yet. A warranty database connection is required.')
+    : (lang === 'fa' ? 'لطفاً شماره سریال را وارد کنید.' : 'Please enter a serial number.');
+}
+</script>
+</body>
+</html>
