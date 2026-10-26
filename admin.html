@@ -56,7 +56,7 @@ h2{font-size:20px}
 
 <script>
 const SUPABASE_URL = 'https://vcvefrvkfqhvvwkbxelv.supabase.co';
-const SUPABASE_KEY = '‏sb_publishable_cIdE8M4uyenSYRphzmIvqg_ZjRcboQs';
+const SUPABASE_KEY = 'sb‏_publishable_cIdE8M4uyenSYRphzmIvqg_ZjRcboQs';
 
 let accessToken = '';
 let currentEmail = '';
@@ -71,7 +71,8 @@ async function login(){
     say('ایمیل و رمز عبور را وارد کنید.');
     return;
   }
-  if(SUPABASE_KEY === 'YOUR_SUPABASE_PUBLISHABLE_KEY')
+  if(SUPABASE_KEY === 'YOUR_SUPABASE_PUBLISHABLE_KEY'){
+    say('ابتدا کلید Publishable را در کد وارد کنید.');
     return;
   }
   $('loginBtn').disabled = true;
