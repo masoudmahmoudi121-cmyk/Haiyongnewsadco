@@ -1,5 +1,5 @@
 
-<!DOCTYPE html>
+<!DOCTYPE html><!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
@@ -253,9 +253,8 @@ async function loadWarranties() {
 
   try {
     const rows = await api(
-      'const rows = await api(
-  'warranties?select=serial_number,model,installation_date,warranty_months&order=created_at.desc'
-);
+      'warranties?select=serial_number,model,installation_date,warranty_months&order=created_at.desc'
+    );
 
     $('list').replaceChildren();
 
@@ -265,40 +264,23 @@ async function loadWarranties() {
       return;
     }
 
-    
-for (const warranty of rows) {
-  const item = document.createElement('div');
-  item.style.cssText =
-    'padding:12px 0;border-bottom:1px solid #ddd;line-height:1.9;overflow-wrap:anywhere';
+    for (const warranty of rows) {
+      const item = document.createElement('div');
+      item.style.cssText =
+        'padding:12px 0;border-bottom:1px solid #ddd;line-height:1.9;overflow-wrap:anywhere';
 
-  const title = document.createElement('strong');
-  title.textContent = warranty.serial_number;
-  item.appendChild(title);
+      const title = document.createElement('strong');
+      title.textContent = warranty.serial_number;
+      item.appendChild(title);
 
-  const details = document.createElement('div');
-  details.textContent =
-    'مدل: ' + warranty.model +
-    ' | تاریخ نصب: ' + warranty.installation_date +
-    ' | گارانتی: ' + warranty.warranty_months + ' ماه';
-  item.appendChild(details);
+      const details = document.createElement('div');
+      details.textContent =
+        'مدل: ' + warranty.model +
+        ' | تاریخ نصب: ' + warranty.installation_date +
+        ' | گارانتی: ' + warranty.warranty_months + ' ماه';
 
-  const editButton = document.createElement('button');
-  editButton.type = 'button';
-  editButton.textContent = 'ویرایش';
-  editButton.onclick = () => editWarranty(warranty);
-  item.appendChild(editButton);
-
-  const deleteButton = document.createElement('button');
-  deleteButton.type = 'button';
-  deleteButton.textContent = 'حذف';
-  deleteButton.style.background = '#b42318';
-  deleteButton.style.color = '#ffffff';
-  deleteButton.onclick = () => deleteWarranty(warranty);
-  item.appendChild(deleteButton);
-
-  $('list').appendChild(item);
-}
-
+      item.appendChild(details);
+      $('list').appendChild(item);
     }
 
     say('فهرست دستگاه‌ها به‌روزرسانی شد.');
@@ -309,79 +291,6 @@ for (const warranty of rows) {
     say('خطای دریافت فهرست: ' + (error.message || String(error)));
   } finally {
     $('refreshBtn').disabled = false;
-  }
-}
-
-async function editWarranty(warranty) {
-  const serial = prompt('شماره سریال:', warranty.serial_number);
-  if (serial === null) return;
-
-  const model = prompt('مدل دستگاه:', warranty.model);
-  if (model === null) return;
-
-  const customer = prompt('نام مشتری:', warranty.customer_name || '');
-  if (customer === null) return;
-
-  const installationDate = prompt(
-    'تاریخ نصب (میلادی، YYYY-MM-DD):',
-    warranty.installation_date
-  );
-  if (installationDate === null) return;
-
-  const monthsText = prompt('مدت گارانتی به ماه:', warranty.warranty_months);
-  if (monthsText === null) return;
-
-  const months = Number(monthsText);
-
-  if (
-    !serial.trim() ||
-    !model.trim() ||
-    !/^\d{4}-\d{2}-\d{2}$/.test(installationDate) ||
-    !Number.isInteger(months) ||
-    months < 1
-  ) {
-    say('اطلاعات واردشده معتبر نیست. تاریخ باید به شکل YYYY-MM-DD باشد.');
-    return;
-  }
-
-  try {
-    await api('warranties?id=eq.' + encodeURIComponent(warranty.id), {
-      method: 'PATCH',
-      body: JSON.stringify({
-        serial_number: serial.trim(),
-        model: model.trim(),
-        customer_name: customer.trim() || null,
-        installation_date: installationDate,
-        warranty_months: months
-      })
-    });
-
-    say('اطلاعات دستگاه به‌روزرسانی شد.');
-    await loadWarranties();
-  } catch (error) {
-    console.error('Edit warranty error:', error);
-    say('ویرایش انجام نشد: ' + (error.message || String(error)));
-  }
-}
-
-async function deleteWarranty(warranty) {
-  const confirmed = confirm(
-    'آیا مطمئن هستید که می‌خواهید دستگاه با سریال ' +
-    warranty.serial_number + ' را حذف کنید؟ این کار قابل بازگشت نیست.'
-  );
-
-  if (!confirmed) return;
-
-  try {
-    await api('warranties?id=eq.' + encodeURIComponent(warranty.id), {
-      method: 'DELETE'
-    });
-
-    say('دستگاه حذف شد.');
-    await loadWarranties();
-  } catch (error) {
-    console.error('Delete warranty error:', error);
-    say('حذف انجام نشد: ' + (error.message || String(error)));
   }
 }
 
@@ -403,15 +312,3 @@ async function logout() {
   try {
     await fetch(SUPABASE_URL + '/auth/v1/logout', {
       method: 'POST',
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': 'Bearer ' + token
-      }
-    });
-  } catch (error) {
-    console.error('Logout request error:', error);
-  }
-}
-</script>
-</body>
-</html>
