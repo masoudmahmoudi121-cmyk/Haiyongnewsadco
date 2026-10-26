@@ -253,8 +253,9 @@ async function loadWarranties() {
 
   try {
     const rows = await api(
-      'warranties?select=serial_number,model,installation_date,warranty_months&order=created_at.desc'
-    );
+      'const rows = await api(
+  'warranties?select=serial_number,model,installation_date,warranty_months&order=created_at.desc'
+);
 
     $('list').replaceChildren();
 
