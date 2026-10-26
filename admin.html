@@ -17,6 +17,7 @@ button:disabled{opacity:.5}
 h2{font-size:20px}
 #message{line-height:1.9;overflow-wrap:anywhere}
 .small{font-size:12px;color:#687386;line-height:1.8}
+[hidden]{display:none!important}
 </style>
 </head>
 <body>
@@ -25,12 +26,13 @@ h2{font-size:20px}
 <div>پنل مدیریت گارانتی</div>
 <div>HAYOUNG NEWSAD</div>
 </header>
+
 <main>
 <section class="card" id="loginCard">
 <h2>ورود مدیر</h2>
 <input id="email" type="email" autocomplete="username" placeholder="ایمیل مدیر">
 <input id="password" type="password" autocomplete="current-password" placeholder="رمز عبور">
-<button id="loginBtn" onclick="login()">ورود</button>
+<button id="loginBtn" type="button" onclick="login()">ورود</button>
 </section>
 
 <section class="card" id="adminCard" hidden>
@@ -42,10 +44,10 @@ h2{font-size:20px}
 <label for="install">تاریخ نصب (میلادی)</label>
 <input id="install" type="date">
 <label for="months">مدت گارانتی (ماه)</label>
-<input id="months" type="number" min="1" value="12">
-<button id="saveBtn" onclick="addWarranty()">ثبت دستگاه</button>
-<button onclick="loadWarranties()">به‌روزرسانی فهرست</button>
-<button onclick="logout()">خروج از حساب</button>
+<input id="months" type="number" min="1" step="1" value="12">
+<button id="saveBtn" type="button" onclick="addWarranty()">ثبت دستگاه</button>
+<button id="refreshBtn" type="button" onclick="loadWarranties()">به‌روزرسانی فهرست</button>
+<button type="button" onclick="logout()">خروج از حساب</button>
 <h2>دستگاه‌های ثبت‌شده</h2>
 <div id="list"></div>
 </section>
@@ -55,149 +57,269 @@ h2{font-size:20px}
 </main>
 
 <script>
+'use strict';
+
 const SUPABASE_URL = 'https://vcvefrvkfqhvvwkbxelv.supabase.co';
-const SUPABASE_KEY = 'sb‏_publishable_cIdE8M4uyenSYRphzmIvqg_ZjRcboQs';
+const SUPABASE_KEY = 'sb_publishable_cIdE8M4uyenSYRphzmIvqg_ZjRcboQs';
 
 let accessToken = '';
 let currentEmail = '';
 
 const $ = id => document.getElementById(id);
-const say = text => $('message').textContent = text;
+const say = message => { $('message').textContent = message; };
 
-async function login(){
+function errorMessage(data, fallback) {
+  if (data && typeof data === 'object') {
+    return data.msg ||
+      data.message ||
+      data.error_description ||
+      data.error ||
+      data.hint ||
+      fallback;
+  }
+  return fallback;
+}
+
+async function requestJson(url, options) {
+  let response;
+
+  try {
+    response = await fetch(url, options);
+  } catch (error) {
+    throw new Error(
+      'اتصال به سرور برقرار نشد. اینترنت، آدرس پروژه و کلید را بررسی کنید. جزئیات: ' +
+      (error.message || 'خطای شبکه')
+    );
+  }
+
+  const raw = await response.text();
+  let data = null;
+
+  try {
+    data = raw ? JSON.parse(raw) : null;
+  } catch {
+    data = raw;
+  }
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error('ورود ناموفق است. ایمیل و رمز عبور را بررسی کنید.');
+    }
+
+    if (response.status === 403) {
+      throw new Error('دسترسی مجاز نیست. مجوزهای حساب مدیر و سیاست‌های دیتابیس را بررسی کنید.');
+    }
+
+    if (response.status === 409) {
+      throw new Error('این شماره سریال قبلاً ثبت شده است.');
+    }
+
+    throw new Error(
+      errorMessage(data, 'خطای سرور با کد ' + response.status)
+    );
+  }
+
+  return data;
+}
+
+async function login() {
   const email = $('email').value.trim();
   const password = $('password').value;
-  if(!email || !password){
+
+  if (!email || !password) {
     say('ایمیل و رمز عبور را وارد کنید.');
     return;
   }
-  if(SUPABASE_KEY === 'YOUR_SUPABASE_PUBLISHABLE_KEY'){
-    say('ابتدا کلید Publishable را در کد وارد کنید.');
+
+  if (
+    !SUPABASE_KEY ||
+    SUPABASE_KEY === 'YOUR_SUPABASE_PUBLISHABLE_KEY' ||
+    !SUPABASE_KEY.startsWith('sb_publishable_')
+  ) {
+    say('کلید Publishable را در کد وارد کنید و مطمئن شوید که صحیح است.');
     return;
   }
+
   $('loginBtn').disabled = true;
   say('در حال بررسی اطلاعات ورود...');
-  try{
-    const r = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password',{
-      method:'POST',
-      headers:{
-        'apikey':SUPABASE_KEY,
-        'Content-Type':'application/json'
-      },
-      body:JSON.stringify({email,password})
-    });
-    const data = await r.json();
-    if(!r.ok) throw new Error(data.msg || data.message || data.error_description || 'ورود ناموفق بود.');
+
+  try {
+    const data = await requestJson(
+      SUPABASE_URL + '/auth/v1/token?grant_type=password',
+      {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+      }
+    );
+
+    if (!data || !data.access_token || !data.user) {
+      throw new Error('پاسخ ورود از سرور کامل نیست.');
+    }
+
     accessToken = data.access_token;
-    currentEmail = data.user.email;
+    currentEmail = data.user.email || email;
+
     $('loginCard').hidden = true;
     $('adminCard').hidden = false;
     $('signedIn').textContent = 'حساب واردشده: ' + currentEmail;
     $('password').value = '';
-    say('ورود انجام شد. در حال دریافت فهرست دستگاه‌ها...');
+
+    say('ورود موفق بود. در حال دریافت فهرست دستگاه‌ها...');
     await loadWarranties();
-  }catch(e){
-    say('ورود انجام نشد: ' + e.message);
-  }finally{
+
+  } catch (error) {
+    console.error('Login error:', error);
+    say('ورود انجام نشد: ' + (error.message || String(error)));
+  } finally {
     $('loginBtn').disabled = false;
   }
 }
 
-async function api(path, options={}){
-  const r = await fetch(SUPABASE_URL + '/rest/v1/' + path,{
-    ...options,
-    headers:{
-      'apikey':SUPABASE_KEY,
-      'Authorization':'Bearer ' + accessToken,
-      'Content-Type':'application/json',
-      'Prefer':'return=representation',
-      ...(options.headers || {})
-    }
-  });
-  const text = await r.text();
-  let data;
-  try{data = text ? JSON.parse(text) : null;}catch{data = text;}
-  if(!r.ok) throw new Error(data?.message || data?.hint || data?.details || text || 'خطای پایگاه داده');
-  return data;
+async function api(path, options = {}) {
+  if (!accessToken) {
+    throw new Error('نشست ورود معتبر نیست. دوباره وارد شوید.');
+  }
+
+  const headers = {
+    'apikey': SUPABASE_KEY,
+    'Authorization': 'Bearer ' + accessToken,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation',
+    ...(options.headers || {})
+  };
+
+  return await requestJson(
+    SUPABASE_URL + '/rest/v1/' + path,
+    { ...options, headers }
+  );
 }
 
-async function addWarranty(){
+async function addWarranty() {
   const serial = $('serial').value.trim();
   const model = $('model').value.trim();
   const install = $('install').value;
   const months = Number($('months').value);
-  if(!serial || !model || !install || !Number.isInteger(months) || months < 1){
+
+  if (
+    !serial ||
+    !model ||
+    !install ||
+    !Number.isInteger(months) ||
+    months < 1
+  ) {
     say('شماره سریال، مدل، تاریخ نصب و مدت معتبر گارانتی را وارد کنید.');
     return;
   }
+
   $('saveBtn').disabled = true;
-  try{
-    await api('warranties',{
-      method:'POST',
-      body:JSON.stringify({
-        serial_number:serial,
-        model:model,
-        customer_name:$('customer').value.trim() || null,
-        installation_date:install,
-        warranty_months:months
+  say('در حال ثبت دستگاه...');
+
+  try {
+    await api('warranties', {
+      method: 'POST',
+      body: JSON.stringify({
+        serial_number: serial,
+        model: model,
+        customer_name: $('customer').value.trim() || null,
+        installation_date: install,
+        warranty_months: months
       })
     });
+
     $('serial').value = '';
     $('model').value = '';
     $('customer').value = '';
     $('install').value = '';
     $('months').value = '12';
+
     say('دستگاه با موفقیت ثبت شد.');
     await loadWarranties();
-  }catch(e){
-    say('ثبت انجام نشد: ' + e.message);
-  }finally{
+
+  } catch (error) {
+    console.error('Add warranty error:', error);
+    say('ثبت انجام نشد: ' + (error.message || String(error)));
+  } finally {
     $('saveBtn').disabled = false;
   }
 }
 
-async function loadWarranties(){
+async function loadWarranties() {
+  $('refreshBtn').disabled = true;
   $('list').textContent = 'در حال بارگذاری...';
-  try{
-    const rows = await api('warranties?select=serial_number,model,installation_date,warranty_months&order=created_at.desc');
+
+  try {
+    const rows = await api(
+      'warranties?select=serial_number,model,installation_date,warranty_months&order=created_at.desc'
+    );
+
     $('list').replaceChildren();
-    if(!rows.length){
+
+    if (!Array.isArray(rows) || rows.length === 0) {
       $('list').textContent = 'هنوز دستگاهی ثبت نشده است.';
+      say('فهرست به‌روزرسانی شد.');
       return;
     }
-    for(const w of rows){
+
+    for (const warranty of rows) {
       const item = document.createElement('div');
-      item.style.cssText = 'padding:12px 0;border-bottom:1px solid #ddd;line-height:1.9;overflow-wrap:anywhere';
+      item.style.cssText =
+        'padding:12px 0;border-bottom:1px solid #ddd;line-height:1.9;overflow-wrap:anywhere';
+
       const title = document.createElement('strong');
-      title.textContent = w.serial_number;
+      title.textContent = warranty.serial_number;
       item.appendChild(title);
+
       const details = document.createElement('div');
-      details.textContent = 'مدل: ' + w.model + ' | تاریخ نصب: ' + w.installation_date + ' | گارانتی: ' + w.warranty_months + ' ماه';
+      details.textContent =
+        'مدل: ' + warranty.model +
+        ' | تاریخ نصب: ' + warranty.installation_date +
+        ' | گارانتی: ' + warranty.warranty_months + ' ماه';
+
       item.appendChild(details);
       $('list').appendChild(item);
     }
-  }catch(e){
+
+    say('فهرست دستگاه‌ها به‌روزرسانی شد.');
+
+  } catch (error) {
+    console.error('Load warranties error:', error);
     $('list').textContent = 'دریافت فهرست ناموفق بود.';
-    say('خطای دریافت فهرست: ' + e.message);
+    say('خطای دریافت فهرست: ' + (error.message || String(error)));
+  } finally {
+    $('refreshBtn').disabled = false;
   }
 }
 
-async function logout(){
-  try{
-    await fetch(SUPABASE_URL + '/auth/v1/logout',{
-      method:'POST',
-      headers:{
-        'apikey':SUPABASE_KEY,
-        'Authorization':'Bearer ' + accessToken
-      }
-    });
-  }catch(e){}
+async function logout() {
+  const token = accessToken;
+
   accessToken = '';
   currentEmail = '';
+
   $('adminCard').hidden = true;
   $('loginCard').hidden = false;
   $('list').replaceChildren();
+  $('password').value = '';
+
   say('از حساب خارج شدید.');
+
+  if (!token) return;
+
+  try {
+    await fetch(SUPABASE_URL + '/auth/v1/logout', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + token
+      }
+    });
+  } catch (error) {
+    console.error('Logout request error:', error);
+  }
 }
 </script>
 </body>
